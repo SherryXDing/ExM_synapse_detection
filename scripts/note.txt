@@ -1,0 +1,2 @@
+Preprocessing
+Background subtraction using Fiji: Rolling ball radius = 20 pixels, disable smoothing
