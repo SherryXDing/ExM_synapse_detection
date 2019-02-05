@@ -1,6 +1,0 @@
-{
-    "python.linting.pylintEnabled": false,
-    "editor.fontSize": 16,
-    "python.pythonPath": "python3.6",
-    "terminal.integrated.fontSize": 16,
-}
