@@ -359,7 +359,7 @@ def gen_unet_batch_v1(img_mask_names, crop_sz=(64,64,64), mask_sz=(24,24,24), ba
             if rot_angle[j]:
                 batch_img[j,:,:,:,0] = np.rot90(batch_img[j,:,:,:,0], rot_angle[j], axes=(1,2))
                 batch_mask[j,:,:,:,0] = np.rot90(batch_mask[j,:,:,:,0], rot_angle[j], axes=(1,2))
-        
+
         yield batch_img, batch_mask
 
 

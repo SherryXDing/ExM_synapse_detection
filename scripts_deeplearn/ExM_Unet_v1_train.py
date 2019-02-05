@@ -23,7 +23,7 @@ network = DeepNeuralNetwork(model, compile_args=compile_args)
 batch_sz = 16
 n_gpus = 4
 generator = gen_unet_batch_v1(img_mask_names, crop_sz=(64,64,64), mask_sz=(24,24,24), batch_sz=batch_sz*n_gpus)
-save_path = '/groups/scicompsoft/home/dingx/Documents/ExM/scripts_deeplearn/saved_unet_model/'
+save_path = '/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/DING/model_DNN/saved_unet_model/'
 history = network.train_network(generator=generator, steps_per_epoch=100, epochs=500, n_gpus=n_gpus, save_name=None)
 
 with open(save_path+'history_rawdata_batch64_steps100_epochs500.pkl', 'wb') as f:

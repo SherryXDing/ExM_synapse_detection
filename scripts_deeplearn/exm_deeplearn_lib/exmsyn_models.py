@@ -15,7 +15,7 @@ def _conv_block(input_tensor, n_filters, kernel_size=(3, 3, 3), batch_normalizat
     return layer
 
 
-def vgg_like(input_shape, base_filters=32):
+def vgg_like_v1(input_shape, base_filters=32):
     """ 
     a VGG structure model
     input_shape: input size in (x,y,z)
@@ -37,6 +37,67 @@ def vgg_like(input_shape, base_filters=32):
     pool3 = MaxPooling3D(pool_size=(2,2,2))(conv3)  # 6x6x6
 
     full1 = Flatten()(pool3)
+    full1 = Dense(units=4*base_filters, activation='relu')(full1)
+    full1 = Dropout(0.5)(full1)
+
+    full2 = Dense(units=4*base_filters, activation='relu')(full1)
+    full2 = Dropout(0.5)(full2)
+
+    predictions = Dense(units=1, activation='sigmoid')(full2)
+
+    model = Model(inputs=inputs, outputs=predictions)
+
+    return model
+
+
+def vgg_like_v2(input_shape, base_filters=32):
+    """ 
+    a VGG structure model
+    input_shape: input size in (x,y,z)
+    """
+    input_shape = input_shape + (1,)  # one channel
+    inputs = Input(shape=input_shape)  # 48x48x48
+
+    conv1 = _conv_block(input_tensor=inputs, n_filters=base_filters, padding='valid')  # 46x46x46
+    conv1 = _conv_block(input_tensor=conv1, n_filters=base_filters, padding='valid')  # 44x44x44
+    pool1 = MaxPooling3D(pool_size=(2, 2, 2))(conv1)  # 22x22x22
+
+    conv2 = _conv_block(input_tensor=pool1, n_filters=2*base_filters, padding='valid')  # 20x20x20
+    conv2 = _conv_block(input_tensor=conv2, n_filters=2*base_filters, padding='valid')  # 18x18x18
+    conv2 = _conv_block(input_tensor=conv2, n_filters=2*base_filters, padding='valid')  # 16x16x16
+    pool2 = MaxPooling3D(pool_size=(2, 2, 2))(conv2)  # 8x8x8
+
+    full1 = Flatten()(pool2)
+    full1 = Dense(units=4*base_filters, activation='relu')(full1)
+    full1 = Dropout(0.5)(full1)
+
+    full2 = Dense(units=4*base_filters, activation='relu')(full1)
+    full2 = Dropout(0.5)(full2)
+
+    predictions = Dense(units=1, activation='sigmoid')(full2)
+
+    model = Model(inputs=inputs, outputs=predictions)
+
+    return model
+
+
+def vgg_like_v3(input_shape, base_filters=32):
+    """ 
+    a VGG structure model
+    input_shape: input size in (x,y,z)
+    """
+    input_shape = input_shape + (1,)  # one channel
+    inputs = Input(shape=input_shape)  # 48x48x48
+
+    conv1 = _conv_block(input_tensor=inputs, n_filters=base_filters, padding='valid')  # 46x46x46
+    conv1 = _conv_block(input_tensor=conv1, n_filters=base_filters, padding='valid')  # 44x44x44
+    pool1 = MaxPooling3D(pool_size=(2, 2, 2))(conv1)  # 22x22x22
+
+    conv2 = _conv_block(input_tensor=pool1, n_filters=2*base_filters, padding='valid')  # 20x20x20
+    conv2 = _conv_block(input_tensor=conv2, n_filters=2*base_filters, padding='valid')  # 18x18x18
+    pool2 = MaxPooling3D(pool_size=(2, 2, 2))(conv2)  # 9x9x9
+
+    full1 = Flatten()(pool2)
     full1 = Dense(units=4*base_filters, activation='relu')(full1)
     full1 = Dropout(0.5)(full1)
 

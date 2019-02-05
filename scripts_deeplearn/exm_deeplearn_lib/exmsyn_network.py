@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 from keras.callbacks import Callback, CSVLogger  
 from keras import backend as K
+import tensorflow as tf 
 
 
 def score_binary_logistic_regression_error(y_true, y_pred):
@@ -18,7 +19,7 @@ def seg_binary_logistic_regression_error(y_true, y_pred):
     """
     loss function for object mask in DeepMask
     """
-    score = K.mean(K.log(1 + K.exp(-y_true*y_pred)))
+    score = K.mean(K.log(1 + K.exp(-y_true*y_pred)), axis=-1)
     return score
 
 
@@ -45,6 +46,11 @@ def masked_error_neg(y_true, y_pred):
     mask = K.cast(K.equal(y_true,0), K.floatx())
     error = y_pred * mask
     score = K.sum(error) / K.maximum(K.sum(mask),1)
+    return score
+
+
+def L1_err(y_true, y_pred):
+    score = K.mean(K.abs(y_pred-y_true), axis=-1)
     return score
 
 
@@ -92,6 +98,7 @@ class multi_gpu_callback(Callback):
     set callbacks for multi-gpu training
     """
     def __init__(self, model, save_name):
+        super().__init__()
         self.model_to_save = model
         self.save_name = save_name
     
@@ -104,7 +111,8 @@ class DeepNeuralNetwork:
     deep nerual network class that wraps keras model (multi-gpu model) and related functions
     """
     def __init__(self, model, compile_args=None):
-        self.network = model
+        with tf.device('/cpu:0'):
+            self.network = model
         if compile_args is None:
             compile_args = {'optimizer':'adam', 'loss':'binary_crossentropy', 'metrics':['accuracy']}
         self.network.compile(**compile_args)
@@ -114,7 +122,7 @@ class DeepNeuralNetwork:
 
     def save_whole_network(self, file_path_name):
         file_name = file_path_name + '.whole.h5'
-        self.network.save(file_name)
+        self.network.save(file_name, overwrite=True)
         print('Save the whole network to disk as a .whole.h5 file.')
 
 
@@ -122,7 +130,7 @@ class DeepNeuralNetwork:
         model_json = self.network.to_json()
         with open(file_path_name+'_arch.json', 'w') as json_file:
             json_file.write(model_json)
-        self.network.save_weights(file_path_name+'_weight.h5')
+        self.network.save_weights(file_path_name+'_weight.h5', overwrite=True)
         print('Saved network architecture to disk with architecture in .json file and weights in .h5 file.')
 
     
@@ -140,7 +148,7 @@ class DeepNeuralNetwork:
             history = self.network.fit_generator(generator, steps_per_epoch=steps_per_epoch, epochs=epochs, callbacks=callbacks, validation_data=validation_data)
         else:
             print("Training using multiple GPUs...")
-            parallel_model = multi_gpu_model(self.network, gpus=n_gpus, cpu_merge=True, cpu_relocation=True)
+            parallel_model = multi_gpu_model(self.network, gpus=n_gpus, cpu_merge=True, cpu_relocation=False)
             parallel_model.compile(**self.compile_args)
             history = parallel_model.fit_generator(generator, steps_per_epoch=steps_per_epoch, epochs=epochs, callbacks=callbacks, validation_data=validation_data)
         return history

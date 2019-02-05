@@ -23,8 +23,11 @@ network = DeepNeuralNetwork(model, compile_args=compile_args)
 batch_sz = 16
 n_gpus = 4
 generator = gen_unet_batch_v2(img_mask_junk_names, crop_sz=(64,64,64), mask_sz=(24,24,24), batch_sz=batch_sz*n_gpus)
-save_path = '/groups/scicompsoft/home/dingx/Documents/ExM/scripts_deeplearn/saved_unet_model/'
-history = network.train_network(generator=generator, steps_per_epoch=100, epochs=500, n_gpus=n_gpus, save_name=None)
+save_path = '/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/DING/model_DNN/saved_unet_model/model_gen2/'
+history = network.train_network(generator=generator, steps_per_epoch=100, epochs=2000, n_gpus=n_gpus, save_name=save_path+'unet')
 
-with open(save_path+'history_rawdata_gen2_batch64_steps100_epochs500.pkl', 'wb') as f:
+with open(save_path+'history_rawdata_gen2_lr1e-3_sgd_batch64_steps100_epochs2000.pkl', 'wb') as f:
     pickle.dump(history.history, f)
+
+network.save_whole_network(save_path+'unet')
+network.save_architecture(save_path+'unet')

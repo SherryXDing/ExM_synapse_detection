@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Dec 18 17:15:34 2018
+
+@author: dingx
+"""
+
+import nrrd
+import numpy as np 
+
+file_path = '/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/DING/data/'
+mask_names = [file_path+'antennal_lobe_1/mask_unet_syn1_edge2.nrrd', file_path+'ellipsoid_body_1/mask_unet_syn1_edge2.nrrd', \
+              file_path+'mushroom_body_1/mask_unet_syn1_edge2.nrrd', file_path+'optic_lobe_1/mask_unet_syn1_edge2.nrrd', \
+              file_path+'protocerebrum_1/mask_unet_syn1_edge2.nrrd']
+
+num_syn = np.zeros((len(mask_names),1))
+num_bg = np.zeros((len(mask_names),1))
+
+for i in range(len(mask_names)):
+    img, head = nrrd.read(mask_names[i])
+    num_syn[i] = len(img[img==1])
+    num_bg[i] = len(img[img==0])

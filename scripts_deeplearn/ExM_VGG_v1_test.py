@@ -36,7 +36,7 @@ loss_all = np.zeros((N_model,1))
 acc_all = np.zeros((N_model,1))
 
 for i in range(N_model):
-    model = load_model(model_path+'vgg_'+str(i)+'.h5')
+    model = load_model(model_path+'model/vgg_'+str(i)+'.h5')
     score = model.evaluate(vali_img, vali_labels, batch_size=16)
     loss_all[i] = score[0]
     acc_all[i] = score[1]
