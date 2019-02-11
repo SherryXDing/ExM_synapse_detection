@@ -38,7 +38,7 @@ def classify_local_maxima(local_maxima_img, segment_img, save_path=None, mask_im
         "Segmented image size and local maxima image shapes are not match!"
     if not os.path.exists(save_path):
         os.mkdir(save_path)
-    if mask_img:
+    if mask_img is not None:
         assert segment_img.shape == mask_img.shape, \
             "Mask image shape does not match segmented image!"
         mask_img[mask_img!=0] = 1
@@ -89,7 +89,7 @@ def classify_obj_using_vgg(classified_img, raw_img, vgg_network, net_input_sz=(4
         "VGG classifier does not exist!"
     if not os.path.exists(save_path):
         os.mkdir(save_path)
-    if mask_img:
+    if mask_img is not None:
         assert raw_img.shape == mask_img.shape, \
             "Mask image shape does not match raw image!"
         mask_img[mask_img!=0] = 1
