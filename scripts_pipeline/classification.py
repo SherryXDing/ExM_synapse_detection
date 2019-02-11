@@ -23,7 +23,7 @@ def L1_err(y_true, y_pred):
     return score
 
 
-def classify_local_maxima(local_maxima_img, segment_img, save_path=None):
+def classify_local_maxima(local_maxima_img, segment_img, save_path=None, mask_img=None):
     '''
     Classify synapses and junks based on number of local maxima points
     Local maxima points > 4 --> synapse; local maxima points < 2 --> junk
@@ -32,11 +32,18 @@ def classify_local_maxima(local_maxima_img, segment_img, save_path=None):
     local_maxima_img: image including local maxima points
     segment_img: segmented image
     save_path: path to save the detected synapses individually
+    mask_img: mask image, only the regions in the mask are processed
     '''
     assert local_maxima_img.shape == segment_img.shape, \
-        "Segmented image size and local maxima image size are not match!"
+        "Segmented image size and local maxima image shapes are not match!"
     if not os.path.exists(save_path):
         os.mkdir(save_path)
+    if mask_img:
+        assert segment_img.shape == mask_img.shape, \
+            "Mask image shape does not match segmented image!"
+        mask_img[mask_img!=0] = 1
+        local_maxima_img = local_maxima_img * mask_img
+        segment_img = segment_img * mask_img
     print("Classifying based on statistics of local maxima points...")
 
     segment_img[segment_img!=0] = 1
@@ -65,7 +72,7 @@ def classify_local_maxima(local_maxima_img, segment_img, save_path=None):
     return classified_img
 
 
-def classify_obj_using_vgg(classified_img, raw_img, vgg_network, net_input_sz=(48,48,48), custom_objects=None, save_path=None):
+def classify_obj_using_vgg(classified_img, raw_img, vgg_network, net_input_sz=(48,48,48), custom_objects=None, save_path=None, mask_img=None):
     '''
     Classify undetermined objects (2<=number of local maxima<=4) using trained VGG network
     Return a final classification image combining statistical classification results (classified based on number of local maxima)
@@ -82,6 +89,12 @@ def classify_obj_using_vgg(classified_img, raw_img, vgg_network, net_input_sz=(4
         "VGG classifier does not exist!"
     if not os.path.exists(save_path):
         os.mkdir(save_path)
+    if mask_img:
+        assert raw_img.shape == mask_img.shape, \
+            "Mask image shape does not match raw image!"
+        mask_img[mask_img!=0] = 1
+        classified_img = classified_img * mask_img
+        raw_img = raw_img * mask_img
     print("Classifying undetermined objects using VGG network...")
 
     final_img = np.zeros(classified_img.shape, dtype=classified_img.dtype)
@@ -142,25 +155,27 @@ def classify_obj_using_vgg(classified_img, raw_img, vgg_network, net_input_sz=(4
 
 def main():
 
-    data_path = '/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/test2/L2_20180503_neuron1/'
-    raw_img_name = 'BGsubtract_prod_mask_1.nrrd'
-    local_maxima_name = 'max_BGsubtract_prod_mask_1.nrrd'
-    segment_name = 'watershed_seg_BGsubtract_prod_mask_1.nrrd'
+    data_path = '/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/test2/L2_20180504_neuron0/'
+    raw_img_name = 'BGsubtract_prod_mask_0.nrrd'
+    local_maxima_name = 'max_BGsubtract_prod_mask_0.nrrd'
+    segment_name = 'watershed_seg_BGsubtract_prod_mask_0.nrrd'
     save_path = data_path+'results/'
+    mask_name = '0.nrrd'
     
     local_maxima_img, head = nrrd.read(data_path+local_maxima_name)
     segment_img, head = nrrd.read(data_path+segment_name)
     raw_img, head = nrrd.read(data_path+raw_img_name)
+    mask_img, head = nrrd.read(data_path+mask_name)
 
     start = time.time()
-    classified_img = classify_local_maxima(local_maxima_img, segment_img, save_path=save_path)
+    classified_img = classify_local_maxima(local_maxima_img, segment_img, save_path=save_path, mask_img=mask_img)
     # nrrd.write(data_path+'stats_'+segment_name, classified_img)
     # classified_img_name = 'stats_watershed_seg_C2_5753_2694_2876.nrrd'
     # classified_img, head = nrrd.read(data_path+classified_img_name)
 
     vgg_network = '/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/DING/model_DNN/saved_vgg_model/model_vgg2/vgg2.whole.h5'
     custom_objs = {'L1_err': L1_err}
-    final_img = classify_obj_using_vgg(classified_img, raw_img, vgg_network, custom_objects=custom_objs, save_path=save_path)
+    final_img = classify_obj_using_vgg(classified_img, raw_img, vgg_network, custom_objects=custom_objs, save_path=save_path, mask_img=mask_img)
     # nrrd.write(data_path+'final_result.nrrd', final_img)
     end = time.time()
     print("...Running time of classification is {}".format(end-start))
