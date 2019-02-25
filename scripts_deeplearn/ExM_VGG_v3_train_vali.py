@@ -4,7 +4,6 @@ from exm_deeplearn_lib.exmsyn_network import DeepNeuralNetwork
 from exm_deeplearn_lib.exmsyn_network import L1_err
 from exm_deeplearn_lib.exmsyn_compile import prepare_vgg_validation_set
 from keras.optimizers import SGD
-from keras.optimizers import Adam
 import pickle
 import os
 from random import shuffle
@@ -75,8 +74,7 @@ test_img, test_label = prepare_vgg_validation_set(test_pos_img_names, test_neg_i
 input_shape = (48,48,48)
 model = vgg_like_v2(input_shape)
 sgd_opti = SGD(lr=0.001, momentum=0.9, decay=0.00005, nesterov=True)
-#adam_opti = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=0, amsgrad=True)
-compile_args = {'optimizer':adam_opti, 'loss':'binary_crossentropy', 'metrics':['accuracy', L1_err]}
+compile_args = {'optimizer':sgd_opti, 'loss':'binary_crossentropy', 'metrics':['accuracy', L1_err]}
 network = DeepNeuralNetwork(model, compile_args=compile_args)
 
 batch_sz = 16
@@ -84,5 +82,5 @@ n_gpus = 4
 generator = gen_vgg_batch(train_pos_img_names, train_neg_img_names, batch_sz=batch_sz*n_gpus)
 history = network.train_network(generator=generator, steps_per_epoch=100, epochs=2000, n_gpus=n_gpus, save_name=None, validation_data=(test_img, test_label))
 
-with open(save_path+'history_lr1e-3_adam_batch64_steps100_epochs2000_L1err_vgg2.pkl', 'wb') as f:
+with open(save_path+'history_lr1e-3_sgd_batch64_steps100_epochs2000_L1err_vgg2_v2.pkl', 'wb') as f:
     pickle.dump(history.history, f)

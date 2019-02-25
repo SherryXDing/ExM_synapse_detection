@@ -71,6 +71,12 @@ def main():
 
     print('Done!')
 
+    # folder_path = "/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/For_check/Segmented_mask/"
+    # mask_synapse = combine_masks(folder_path+'all_synapses_with_corrections/')
+    # mask_synapse[mask_synapse!=0] = 255
+    # nrrd.write(folder_path+'mask_synapse_all.nrrd', mask_synapse)
+    # print('Done!')
+
 
 if __name__=="__main__":
     main()

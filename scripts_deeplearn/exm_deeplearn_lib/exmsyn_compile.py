@@ -357,8 +357,8 @@ def gen_unet_batch_v1(img_mask_names, crop_sz=(64,64,64), mask_sz=(24,24,24), ba
                 batch_img[j,:,:,:,0] = np.flip(batch_img[j,:,:,:,0], axis=2)
                 batch_mask[j,:,:,:,0] = np.flip(batch_mask[j,:,:,:,0], axis=2)
             if rot_angle[j]:
-                batch_img[j,:,:,:,0] = np.rot90(batch_img[j,:,:,:,0], rot_angle[j], axes=(1,2))
-                batch_mask[j,:,:,:,0] = np.rot90(batch_mask[j,:,:,:,0], rot_angle[j], axes=(1,2))
+                batch_img[j,:,:,:,0] = np.rot90(batch_img[j,:,:,:,0], rot_angle[j], axes=(0,1))
+                batch_mask[j,:,:,:,0] = np.rot90(batch_mask[j,:,:,:,0], rot_angle[j], axes=(0,1))
 
         yield batch_img, batch_mask
 
@@ -439,8 +439,8 @@ def gen_unet_batch_v2(img_mask_junk_names, crop_sz=(64,64,64), mask_sz=(24,24,24
                 batch_img[j,:,:,:,0] = np.flip(batch_img[j,:,:,:,0], axis=2)
                 batch_mask[j,:,:,:,0] = np.flip(batch_mask[j,:,:,:,0], axis=2)
             if rot_angle[j]:
-                batch_img[j,:,:,:,0] = np.rot90(batch_img[j,:,:,:,0], rot_angle[j], axes=(1,2))
-                batch_mask[j,:,:,:,0] = np.rot90(batch_mask[j,:,:,:,0], rot_angle[j], axes=(1,2))
+                batch_img[j,:,:,:,0] = np.rot90(batch_img[j,:,:,:,0], rot_angle[j], axes=(0,1))
+                batch_mask[j,:,:,:,0] = np.rot90(batch_mask[j,:,:,:,0], rot_angle[j], axes=(0,1))
         
         yield batch_img, batch_mask
 
@@ -520,7 +520,7 @@ def prepare_vgg_validation_set(pos_img_names, neg_img_names):
         if z_flip[j]:
             vali_img[j,:,:,:,0] = np.flip(vali_img[j,:,:,:,0], axis=2)
         if rot_angle[j]:
-            vali_img[j,:,:,:,0] = np.rot90(vali_img[j,:,:,:,0], rot_angle[j], axes=(1,2))
+            vali_img[j,:,:,:,0] = np.rot90(vali_img[j,:,:,:,0], rot_angle[j], axes=(0,1))
     
     vali_img = np.float32(vali_img)
     vali_labels = np.asarray(vali_labels)

@@ -11,16 +11,17 @@ Rolling ball radius 20 pixels
 Disable smoothing
 '''
 
-def segment_triangle(img, remove=True):
+def segment_triangle(img, fill_zero=0, remove=True):
     '''
     Image segmentation using triangle thresholding algorithm to get all blobs
+    fill_zero: fill the zero elements with value fill_zero
     If remove: exclude blobs with less than 250 voxels
     '''
     print("Segmentation...")
     start = time.time()
 
     # thresholding
-    img[img==0] = 10
+    img[img==0] = fill_zero
     thres = threshold_triangle(img)
     img_thresholded = np.zeros(img.shape, dtype=img.dtype)
     img_thresholded[img>thres] = 255
@@ -70,7 +71,7 @@ def find_local_max(img, mask=None):
 def main():
 
     file_path = '/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/test2/L2_20180504_neuron0/'
-    img_name = 'BGsubtract_prod_mask_0.nrrd'
+    img_name = 'BGsubtract.nrrd'
 
     img, head = nrrd.read(file_path+img_name)
 
