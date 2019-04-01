@@ -1,6 +1,18 @@
 from skimage.measure import label, regionprops
 import numpy as np 
 import nrrd
+from skimage import io
+
+
+def tif_read(file_name):
+    """
+    read tif image in (rows,cols,slices) shape
+    """
+    im = io.imread(file_name)
+    im_array = np.zeros((im.shape[1],im.shape[2],im.shape[0]), dtype=im.dtype)
+    for i in range(im.shape[0]):
+        im_array[:,:,i] = im[i]
+    return im_array
 
 
 def calculate_performance(predict_img, ground_truth_img):
@@ -36,53 +48,25 @@ def calculate_performance(predict_img, ground_truth_img):
 
 def main():
     data_path = '/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/For_check/'
-    ground_truth = 'Segmented_mask/mask_synapse_all.nrrd'
-    vgg_result = 'final_result.nrrd'
-    unet_result = 'prediction_unet.nrrd'
-    watershed_unet_result = 'watershed_prediction_unet.nrrd'
-    watershed_close_unet_result = 'watershed_close_prediction_unet.nrrd'
-    watershed_closefill_unet_result = 'watershed_closefill_prediction_unet.nrrd'
+    ground_truth = 'mask_synapse_all.nrrd'
+    # vgg_result = 'vgg_final_result.nrrd'
+    unet_result = 'unet_new/postprocessed_unet_C2-5753_2694_2876-PLP.tif'
 
     ground_truth_img, head = nrrd.read(data_path+ground_truth)
-    masked_ground_truth_img = np.zeros(ground_truth_img.shape, dtype=ground_truth_img.dtype)
-    masked_ground_truth_img[20:-24, 20:-24, 20:-24] = ground_truth_img[20:-24, 20:-24, 20:-24]
-    vgg_img, head = nrrd.read(data_path+vgg_result)
-    masked_vgg_img = np.zeros(vgg_img.shape, dtype=vgg_img.dtype)
-    masked_vgg_img[20:-24, 20:-24, 20:-24] = vgg_img[20:-24, 20:-24, 20:-24]
-    unet_img, head = nrrd.read(data_path+unet_result)
-    watershed_unet_img, head = nrrd.read(data_path+watershed_unet_result)
-    watershed_close_unet_img, head = nrrd.read(data_path+watershed_close_unet_result)
-    watershed_closefill_unet_img, head = nrrd.read(data_path+watershed_closefill_unet_result)
+    # vgg_img, head = nrrd.read(data_path+vgg_result)
+    unet_img = tif_read(data_path+unet_result)
 
-    precision_vgg = calculate_performance(masked_vgg_img, masked_ground_truth_img)
-    sensitivity_vgg = calculate_performance(masked_ground_truth_img, masked_vgg_img)
-    print("VGG")
-    print("Sensivity = {}".format(sensitivity_vgg))
-    print("Precision = {}".format(precision_vgg))
+    # precision_vgg = calculate_performance(vgg_img, ground_truth_img)
+    # sensitivity_vgg = calculate_performance(ground_truth_img, vgg_img)
+    # print("VGG")
+    # print("Sensivity = {}".format(sensitivity_vgg))
+    # print("Precision = {}".format(precision_vgg))
 
-    precision_unet = calculate_performance(unet_img, masked_ground_truth_img)
-    sensitivity_unet = calculate_performance(masked_ground_truth_img, unet_img)
+    precision_unet = calculate_performance(unet_img, ground_truth_img)
+    sensitivity_unet = calculate_performance(ground_truth_img, unet_img)
     print("Unet")
     print("Sensitivity = {}".format(sensitivity_unet))
     print("Precision = {}".format(precision_unet))
-
-    precision_watershed_unet = calculate_performance(watershed_unet_img, masked_ground_truth_img)
-    sensitivity_watershed_unet = calculate_performance(masked_ground_truth_img, watershed_unet_img)
-    print("Unet watershed")
-    print("Sensitivity = {}".format(sensitivity_watershed_unet))
-    print("Precision = {}".format(precision_watershed_unet))
-
-    precision_watershed_close_unet = calculate_performance(watershed_close_unet_img, masked_ground_truth_img)
-    sensitivity_watershed_close_unet = calculate_performance(masked_ground_truth_img, watershed_close_unet_img)
-    print("Unet closing watershed")
-    print("Sensitivity = {}".format(sensitivity_watershed_close_unet))
-    print("Precision = {}".format(precision_watershed_close_unet))
-
-    precision_watershed_closefill_unet = calculate_performance(watershed_closefill_unet_img, masked_ground_truth_img)
-    sensitivity_watershed_closefill_unet = calculate_performance(masked_ground_truth_img, watershed_closefill_unet_img)
-    print("Unet closing filling watershed")
-    print("Sensitivity = {}".format(sensitivity_watershed_closefill_unet))
-    print("Precision = {}".format(precision_watershed_closefill_unet))
 
 
 if __name__ == "__main__":

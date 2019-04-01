@@ -3,8 +3,8 @@ close all;
 clc;
 
 
-data_path = '/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/test2/L2_20180504_neuron0/';
-img_name = 'prediction_unet.tif';
+data_path = '/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/For_check/';
+img_name = 'prediction_unet_2.tif';
 
 tic;
 img = read_tif([data_path,img_name]);
