@@ -88,7 +88,9 @@ def remove_small_piece(out_hdf5_file, img_file_name, location, threshold=10):
 
 
 def main(argv):
-    
+    """
+    Main function
+    """
     hdf5_file = None
     location = []
     mask_file = None

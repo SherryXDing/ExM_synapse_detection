@@ -57,17 +57,19 @@ def remove_small_piece(out_path, img_file_name, threshold=10, individual_outpath
 
 
 def main(argv):
-
+    """
+    Main function
+    """
     out_path = None
     img_file = None
     mask_file = None
     threshold = 10
-    separate_mask = False
+    separate_mask = 0
     try:
-        options, remainder = getopt.getopt(argv, "i:o:m:t:s", ["img_file=","out_path=","mask_file=","threshold=","separate_mask"])
+        options, remainder = getopt.getopt(argv, "i:o:m:t:s:", ["img_file=","out_path=","mask_file=","threshold=","separate_mask="])
     except getopt.GetoptError:
         print("ERROR!") 
-        print("Usage: main_3d.py -i <image_file> -o <output_directory> -m <mask_file> -t <threshold> -s <individual_mask_output>")
+        print("Usage: main_3d.py -i <image_file> -o <output_directory> -m <mask_file> -t <threshold> -s <output_individual_masks>")
         sys.exit(1)
     
     for opt, arg in options:
@@ -80,7 +82,7 @@ def main(argv):
         elif opt in ('-t', '--threshold'):
             threshold = int(arg)
         elif opt in ('-s', '--separate_mask'):
-            separate_mask = True
+            separate_mask = int(arg)
     
     try:
         img = tif_read(img_file)
@@ -98,14 +100,18 @@ def main(argv):
     if mask_file is not None:
         try:
             mask = tif_read(mask_file)
+            mask_name = os.path.splitext(os.path.basename(mask_file))[0]
         except FileNotFoundError:
             print("ERROR: Mask file does not exist!")
-            sys.exit(1)
+            sys.exit(1)    
     else:
         mask = None
 
     if separate_mask:
-        individual_outpath = out_path+'/'+img_name+'_individual_masks'
+        if mask is not None:
+            individual_outpath = out_path+'/'+mask_name+'_'+img_name+'_individual_masks'
+        else:
+            individual_outpath = out_path+'/'+img_name+'_individual_masks'
         if not os.path.exists(individual_outpath):
             os.mkdir(individual_outpath)
     else:
@@ -114,8 +120,7 @@ def main(argv):
     start = time.time()
     print('#############################')
     img = unet_test(img=img, mask=mask)
-    if mask is not None:
-        mask_name = os.path.splitext(os.path.basename(mask_file))[0]
+    if mask is not None:       
         out_img_name = out_path+'/'+mask_name+'_'+img_name+'.tif'
     else:
         out_img_name = out_path+'/processed_'+img_name+'.tif'
