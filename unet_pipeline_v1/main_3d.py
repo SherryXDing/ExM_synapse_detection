@@ -26,7 +26,8 @@ def remove_small_piece(out_path, img_file_name, threshold=10, individual_outpath
     label_img = label(img, neighbors=8)
     regionprop_img = regionprops(label_img)
     idx = 0
-    with open(out_path+'/stats_'+img_file_name+'.csv', 'w') as csv_file:
+    csv_name = os.path.splitext(os.path.basename(img_file_name))[0]
+    with open(out_path+'/stats_'+csv_name+'.csv', 'w') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow([' ID ', ' Num vxl ', ' centroid ', ' bbox row ', ' bbox col ', ' bbox vol '])
 
@@ -43,7 +44,7 @@ def remove_small_piece(out_path, img_file_name, threshold=10, individual_outpath
             center_row, center_col, center_vol = props.centroid
             center = (int(center_row), int(center_col), int(center_vol))
             csv_row = [str(idx), str(num_voxel), str(center), str(bbox_row), str(bbox_col), str(bbox_vol)]
-            with open(out_path+'/stats.csv', 'a') as csv_file:
+            with open(out_path+'/stats_'+csv_name+'.csv', 'a') as csv_file:
                 writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 writer.writerow(csv_row)    
             if individual_outpath is not None:
@@ -67,8 +68,8 @@ def main(argv):
     separate_mask = 0
     try:
         options, remainder = getopt.getopt(argv, "i:o:m:t:s:", ["img_file=","out_path=","mask_file=","threshold=","separate_mask="])
-    except getopt.GetoptError:
-        print("ERROR!") 
+    except:
+        print("ERROR:", sys.exc_info()[0]) 
         print("Usage: main_3d.py -i <image_file> -o <output_directory> -m <mask_file> -t <threshold> -s <output_individual_masks>")
         sys.exit(1)
     
@@ -88,8 +89,8 @@ def main(argv):
         img = tif_read(img_file)
         img_name = os.path.splitext(os.path.basename(img_file))[0]
         img_path = os.path.dirname(img_file)
-    except FileNotFoundError:
-        print("ERROR: Image file does not exist!")
+    except:
+        print("ERROR:", sys.exc_info()[0])
         sys.exit(1)
 
     if out_path is None:
@@ -101,8 +102,8 @@ def main(argv):
         try:
             mask = tif_read(mask_file)
             mask_name = os.path.splitext(os.path.basename(mask_file))[0]
-        except FileNotFoundError:
-            print("ERROR: Mask file does not exist!")
+        except:
+            print("ERROR:", sys.exc_info()[0])
             sys.exit(1)    
     else:
         mask = None
@@ -121,7 +122,7 @@ def main(argv):
     print('#############################')
     img = unet_test(img=img, mask=mask)
     if mask is not None:       
-        out_img_name = out_path+'/'+mask_name+'_'+img_name+'.tif'
+        out_img_name = out_path+'/processed_'+mask_name+'_'+img_name+'.tif'
     else:
         out_img_name = out_path+'/processed_'+img_name+'.tif'
     tif_write(img, out_img_name)

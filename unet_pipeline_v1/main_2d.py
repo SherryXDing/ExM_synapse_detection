@@ -7,6 +7,7 @@ from skimage.measure import label, regionprops
 import time
 import csv
 import os
+from random import randint
 
 
 def hdf5_read(file_name, location):
@@ -16,8 +17,14 @@ def hdf5_read(file_name, location):
     file_name: hdf5 file name
     location: a tuple of (min_row, min_col, min_vol, max_row, max_col, max_vol) indicating what area to read
     """
-    with h5py.File(file_name, 'r') as f:
-        im = f['volume'][location[2]:location[5], location[0]:location[3], location[1]:location[4]]
+    read_img = True
+    while read_img:
+        try:
+            with h5py.File(file_name, 'r') as f:
+                im = f['volume'][location[2]:location[5], location[0]:location[3], location[1]:location[4]]
+            read_img = False
+        except OSError:  # If other process is accessing the image, wait 5 seconds to try again
+            time.sleep(randint(1,5))
     im_array = np.zeros((im.shape[1],im.shape[2],im.shape[0]), dtype=im.dtype)
     for i in range(im.shape[0]):
         im_array[:,:,i] = im[i]
@@ -37,8 +44,14 @@ def hdf5_write(im_array, file_name, location):
     im = np.zeros((im_array.shape[2],im_array.shape[0],im_array.shape[1]), dtype=im_array.dtype)
     for i in range(im_array.shape[2]):
         im[i] = im_array[:,:,i]
-    with h5py.File(file_name, 'r+') as f:
-        f['volume'][location[2]:location[5], location[0]:location[3], location[1]:location[4]] = im
+    write_img = True
+    while write_img:
+        try:
+            with h5py.File(file_name, 'r+') as f:
+                f['volume'][location[2]:location[5], location[0]:location[3], location[1]:location[4]] = im
+            write_img = False
+        except OSError: # If other process is accessing the image, wait 5 seconds to try again
+            time.sleep(randint(1,5))
     return None
 
 
@@ -97,8 +110,8 @@ def main(argv):
     threshold = 10
     try:
         options, remainder = getopt.getopt(argv, "i:l:m:t:", ["input_file=","location=","mask_file=","threshold="])
-    except getopt.GetoptError:
-        print("ERROR!") 
+    except:
+        print("ERROR:", sys.exc_info()[0]) 
         print("Usage: main_2d.py -i <input_hdf5_file> -l <location> -m <mask_file> -t <threshold>")
         sys.exit(1)
     
@@ -116,23 +129,15 @@ def main(argv):
     
     # Read part of the hdf5 image file based upon location
     if len(location):
-        try:
-            img_path = os.path.dirname(hdf5_file)
-            img = hdf5_read(hdf5_file, location)
-        except FileNotFoundError:
-            print("ERROR: Image hdf5 file does not exist OR location is not reachable")
-            sys.exit(1)
+        img = hdf5_read(hdf5_file, location)
+        img_path = os.path.dirname(hdf5_file)
     else:
         print("ERROR: location need to be provided!")
         sys.exit(1)
     
     # Read part of the hdf5 mask image based upon location
     if mask_file is not None:
-        try:
-            mask = hdf5_read(mask_file, location)
-        except FileNotFoundError:
-            print("ERROR: Mask hdf5 file does not exist OR location is not reachable")
-            sys.exit(1)
+        mask = hdf5_read(mask_file, location)
         if np.count_nonzero(mask) == 0:  # if the mask has all 0s, write out the result directly
             hdf5_write(mask, hdf5_file, location)
             print("DONE! Location of the mask has all 0s.")

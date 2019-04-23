@@ -30,7 +30,7 @@ usage()
     echo "-o <output_result_directory>, -m <input_mask_directory>, -t <threshold_to_remove_small_piece>, and -s (output individual masks) are optional"
 }
 
-source activate tf 
+source activate synapse 
 
 ######## Main ########
 # Directory of the script
@@ -87,13 +87,11 @@ if [[ $1 == "-2D" ]]; then
     # Create output directory if not exist
     mkdir -p $OUTPUT_DIR
     # Tiff to hdf5 for image slices, output slices_to_volume.h5 file into $OUTPUT_DIR
-    bsub -n 2 -o $OUTPUT_DIR/img_tif2hdf.log "python $SCRIPT_DIR/tif_to_h5.py -i $INPUT_DIR -o $OUTPUT_DIR" 
-    wait
+    bsub -J "tiftohdf_img" -n 1 -P "dickson" -o $OUTPUT_DIR/img_tif2hdf.log "python $SCRIPT_DIR/tif_to_h5.py -i $INPUT_DIR -o $OUTPUT_DIR" 
     # If mask folder is provided, output slices_to_volume.h5 file into $MASK_DIR
     if [[ $MASK_DIR != "" ]]; then
         if [[ `ls $INPUT_DIR/*.tif | wc -l` != 0 ]]; then 
-            bsub -n 2 -o $OUTPUT_DIR/mask_tif2hdf.log "python $SCRIPT_DIR/tif_to_h5.py -i $MASK_DIR"
-            wait
+            bsub -J "tiftohdf_mask" -n 1 -P "dickson" -o $OUTPUT_DIR/mask_tif2hdf.log "python $SCRIPT_DIR/tif_to_h5.py -i $MASK_DIR"
         else
             echo "ERROR! Mask tif image does not exist."
             usage
@@ -102,14 +100,14 @@ if [[ $1 == "-2D" ]]; then
     fi
     # Get the dimension of image
     A_IMG=`ls $INPUT_DIR/*.tif | head -n 1`
-    WIDTH=`identify $A_IMG | cut -d ' ' -f 3 | cut -d 'x' -f 1`
-    HEIGHT=`identify $A_IMG | cut -d ' ' -f 3 | cut -d 'x' -f 2`
+    HEIGHT=`identify $A_IMG | cut -d ' ' -f 3 | cut -d 'x' -f 1`  
+    WIDTH=`identify $A_IMG | cut -d ' ' -f 3 | cut -d 'x' -f 2`  
     SLICE=`ls $INPUT_DIR/*.tif | wc -l`
     # Number of loops in x-dimension
     if [[ $(( WIDTH%1000 )) < 500 ]]; then
         NUM_ROW=$(( WIDTH/1000 ))
     else
-        NUM_ROW=$(( WITDH/1000+1 ))
+        NUM_ROW=$(( WIDTH/1000+1 ))
     fi
     # Number of loops in y-dimension
     if [[ $(( HEIGHT%1000 )) < 500 ]]; then
@@ -124,6 +122,7 @@ if [[ $1 == "-2D" ]]; then
         NUM_VOL=$(( SLICE/1000+1 ))
     fi
     # Loop to process the whole image
+    IDX=0
     for (( ROW=0; ROW<$NUM_ROW; ROW++ )); do
         for (( COL=0; COL<$NUM_COL; COL++ )); do
             for (( VOL=0; VOL<$NUM_VOL; VOL++ )); do
@@ -147,22 +146,20 @@ if [[ $1 == "-2D" ]]; then
                     MAX_COL=$(( VOL*1000+999 ))
                 fi
                 # Submit GPU jobs
-                PIDS=""  # Store job IDs
+                ((IDX++))
                 if [[ $MASK_DIR != "" ]]; then
-                    bsub -n 2 -gpu "num=1" -q gpu_any -o $OUTPUT_DIR/main.log \
+                    bsub -w 'done("tiftohdf_*")' -J "main_$IDX" -n 2 -P "dickson" -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/main_$IDX.log \
                     "python $SCRIPT_DIR/main_2d.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -m $MASK_DIR/slices_to_volume.h5 -t $THRESHOLD"
-                    PIDS+="$!"
                 else
-                    bsub -n 2 -gpu "num=1" -q gpu_any -o $OUTPUT_DIR/main.log \
+                    bsub -w 'done("tiftohdf_*")' -J "main_$IDX" -n 2 -P "dickson" -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/main_$IDX.log \
                     "python $SCRIPT_DIR/main_2d.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -t $THRESHOLD"
-                    PIDS+="$!"
                 fi
             done
         done
     done
     if [[ $TO_TIFF == "true" ]]; then
-        wait $PIDS  # Wait until the whole hdf5 image is processed
-        bsub -n 2 -o $OUTPUT_DIR/result_hdf2tif.log "python $SCRIPT_DIR/h5_to_tif.py -i $OUTPUT_DIR/slices_to_volume.h5" 
+        bsub -w 'ended("main_*")' -J "hdftotif" -n 2 -P "dickson" -o $OUTPUT_DIR/result_hdf2tif.log \
+        "python $SCRIPT_DIR/h5_to_tif.py -i $OUTPUT_DIR/slices_to_volume.h5 -o $OUTPUT_DIR/tif_results" 
     fi
 
 ######## Case 2
@@ -215,13 +212,15 @@ elif [[ $1 == "-3D" ]]; then
     mkdir -p $OUTPUT_DIR
     # Submit GPU jobs
     for IMG in `ls $INPUT_DIR/*.tif`; do
+        IMG_BASENAME=`basename $IMG | cut -d '.' -f 1`
         if [[ $MASK_DIR != "" ]]; then
             for MASK in `ls $MASK_DIR/*.tif`; do
-                bsub -n 2 -gpu "num=1" -q gpu_any -o $OUTPUT_DIR/${MASK}_${IMG}.log \
+                MASK_BASENAME=`basename $MASK | cut -d '.' -f 1`
+                bsub -n 4 -P "dickson" -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/${MASK_BASENAME}_${IMG_BASENAME}.log \
                 "python $SCRIPT_DIR/main_3d.py -i $IMG -o $OUTPUT_DIR -m $MASK -t $THRESHOLD -s $INDIVIDUAL_MASK"
             done
         else
-            bsub -n 2 -gpu "num=1" -q gpu_any -o $OUTPUT_DIR/${MASK}_${IMG}.log \
+            bsub -n 4 -P "dickson" -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/${IMG_BASENAME}.log \
             "python $SCRIPT_DIR/main_3d.py -i $IMG -o $OUTPUT_DIR -t $THRESHOLD -s $INDIVIDUAL_MASK"
         fi
     done 

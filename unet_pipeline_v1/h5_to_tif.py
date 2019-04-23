@@ -52,7 +52,7 @@ def main(argv):
             output_dir = arg
     
     if output_dir is None:
-        output_dir = os.path.dirname(input_file)
+        output_dir = os.path.dirname(os.path.abspath(input_file))
     
     h5_volume_to_tif_slices(input_file, output_dir)
     os.remove(input_file)
