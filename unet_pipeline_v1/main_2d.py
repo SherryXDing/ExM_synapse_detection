@@ -73,7 +73,7 @@ def remove_small_piece(out_hdf5_file, img_file_name, location, threshold=10):
     regionprop_img = regionprops(label_img)
     idx = 0
     out_path = os.path.dirname(out_hdf5_file)
-    csv_name = 'stats_r'+str(location[0])+'_'+str(location[3])+'_c'+str(location[1])+'_'+str(location[4])+'_v'+str(location[2])+'_'+str(location[5])+'.csv'
+    csv_name = 'stats_r'+str(location[0])+'_'+str(location[3]-1)+'_c'+str(location[1])+'_'+str(location[4]-1)+'_v'+str(location[2])+'_'+str(location[5]-1)+'.csv'
     with open(out_path+'/'+csv_name, 'w') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow([' ID ', ' Num vxl ', ' centroid ', ' bbox row ', ' bbox col ', ' bbox vol '])

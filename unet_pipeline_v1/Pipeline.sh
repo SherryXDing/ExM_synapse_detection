@@ -126,24 +126,23 @@ if [[ $1 == "-2D" ]]; then
     for (( ROW=0; ROW<$NUM_ROW; ROW++ )); do
         for (( COL=0; COL<$NUM_COL; COL++ )); do
             for (( VOL=0; VOL<$NUM_VOL; VOL++ )); do
-                # Determine the location
                 MIN_ROW=$(( ROW*1000 ))
                 MIN_COL=$(( COL*1000 ))
-                MIN_VOL=$(( VOL*1000 ))
+                MIN_VOL=$(( VOL*1000 )) 
                 if [[ $ROW == $(( NUM_ROW-1 )) ]]; then
-                    MAX_ROW=$(( WIDTH-1 ))
+                    MAX_ROW=$WIDTH
                 else
-                    MAX_ROW=$(( ROW*1000+999 ))
+                    MAX_ROW=$(( ROW*1000+1000 ))
                 fi
                 if [[ $COL == $(( NUM_COL-1 )) ]]; then
-                    MAX_COL=$(( HEIGHT-1 ))
+                    MAX_COL=$HEIGHT
                 else
-                    MAX_COL=$(( COL*1000+999 ))
+                    MAX_COL=$(( COL*1000+1000 ))
                 fi
                 if [[ $VOL == $(( NUM_VOL-1 )) ]]; then
-                    MAX_VOL=$(( SLICE-1 ))
+                    MAX_VOL=$SLICE
                 else
-                    MAX_COL=$(( VOL*1000+999 ))
+                    MAX_VOL=$(( VOL*1000+1000 ))
                 fi
                 # Submit GPU jobs
                 ((IDX++))

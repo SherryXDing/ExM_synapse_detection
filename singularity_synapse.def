@@ -1,0 +1,53 @@
+BootStrap: docker
+From: ubuntu:16.04
+
+%help
+Singularity container for synapse detection project
+Usage:
+singularity run -B <lab_folder> singularity_synapse.simg -i <input_folder_fullpath> -o(optional) <output_folder_fullpath>
+
+%setup
+mkdir -p $SINGULARITY_ROOTFS/scripts
+
+%files
+./unet_pipeline_v1/* /scripts/
+
+%runscript
+exec python "$@"
+
+%environment
+export PATH=/miniconda/bin:$PATH
+export PATH=/usr/local/cuda-9.2/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64:$LD_LIBRARY_PATH
+
+%post
+apt-get update
+apt-get install -y wget
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.2.148-1_amd64.deb
+dpkg -i cuda-repo-ubuntu1604_9.2.148-1_amd64.deb
+apt-key adv --fetch-keys \
+http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
+
+apt-get update
+apt-get install -y --no-install-recommends \
+cuda-9-2 \
+build-essential \
+ca-certificates \
+cmake \
+git \
+libboost-all-dev && \
+rm -rf /var/lib/apt/lists/*
+
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+bash miniconda.sh -b -p /miniconda
+PATH="/miniconda/bin:$PATH"
+conda config --set always_yes yes --set changeps1 no 
+conda update -q conda
+conda info -a
+conda install python=3.6
+
+conda install tensorflow-gpu=1.10
+conda install numpy
+conda install scikit-image
+conda install h5py
+conda install tqdm
