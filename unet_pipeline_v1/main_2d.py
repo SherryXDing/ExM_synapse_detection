@@ -152,6 +152,7 @@ def main(argv):
     tif_write(img, out_img_name)
     eng = matlab.engine.start_matlab()
     flag = eng.closing_watershed(out_img_name)
+    eng.quit()
     remove_small_piece(out_hdf5_file=hdf5_file, img_file_name=out_img_name, location=location, threshold=threshold)
     if os.path.exists(out_img_name):
         os.remove(out_img_name)

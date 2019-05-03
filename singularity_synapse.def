@@ -4,38 +4,53 @@ From: ubuntu:16.04
 %help
 Singularity container for synapse detection project
 Usage:
-singularity run -B <lab_folder> singularity_synapse.simg -i <input_folder_fullpath> -o(optional) <output_folder_fullpath>
+singularity run --nv -B /misc/local/matlab-2018b/ -B <lab_folder> singularity_synapse.simg main_2d.py/main_3d.py <args>
 
 %setup
 mkdir -p $SINGULARITY_ROOTFS/scripts
+mkdir -p $SINGULARITY_ROOTFS/matlab-build
+mkdir -p $SINGULARITY_ROOTFS/matlab
+cd /misc/local/matlab-2018b/extern/engines/python
+/groups/scicompsoft/home/dingx/Apps/anaconda3/envs/synapse/bin/python setup.py build --build-base="$SINGULARITY_ROOTFS/matlab-build" install --prefix="/matlab"
 
 %files
 ./unet_pipeline_v1/* /scripts/
+/groups/scicompsoft/home/dingx/Apps/anaconda3/envs/synapse/lib/python3.6/site-packages/matlab/* /matlab/
 
 %runscript
+cd /scripts
 exec python "$@"
 
 %environment
 export PATH=/miniconda/bin:$PATH
-export PATH=/usr/local/cuda-9.2/bin:$PATH
-export LD_LIBRARY_PATH=/usr/local/cuda-9.2/lib64:$LD_LIBRARY_PATH
+export matlabroot="/misc/local/matlab-2018b"
+export PATH="$PATH:$matlabroot/bin"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:\
+$matlabroot/bin/glnxa64:\
+$matlabroot/runtime/glnxa64:\
+$matlabroot/sys/os/glnxa64"
 
 %post
 apt-get update
-apt-get install -y wget
-wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.2.148-1_amd64.deb
-dpkg -i cuda-repo-ubuntu1604_9.2.148-1_amd64.deb
-apt-key adv --fetch-keys \
-http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
-
-apt-get update
 apt-get install -y --no-install-recommends \
-cuda-9-2 \
 build-essential \
+libboost-all-dev \
+libxt-dev \
+libxrender-dev \
+libxcomposite-dev \
+libglib2.0-0 \
+libfontconfig \
+libxi-dev \
+libxcursor-dev \
+libasound2-dev \
+libxdamage-dev \
+libxtst-dev \
+libxrandr-dev \
+libdbus-1-dev \
 ca-certificates \
 cmake \
 git \
-libboost-all-dev && \
+wget && \
 rm -rf /var/lib/apt/lists/*
 
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
@@ -51,3 +66,4 @@ conda install numpy
 conda install scikit-image
 conda install h5py
 conda install tqdm
+cp -a /matlab/ /miniconda/lib/python3.6/site-packages

@@ -128,6 +128,7 @@ def main(argv):
     tif_write(img, out_img_name)
     eng = matlab.engine.start_matlab()
     flag = eng.closing_watershed(out_img_name)
+    eng.quit()
     remove_small_piece(out_path=out_path, img_file_name=out_img_name, threshold=threshold, individual_outpath=individual_outpath)
     end = time.time()
     print("DONE! Running time is {} seconds".format(end-start))
