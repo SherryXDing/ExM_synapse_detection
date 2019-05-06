@@ -33,7 +33,7 @@ usage()
     echo "Please provide absolute path for all directories"
 }
 
-source activate synapse 
+# source activate synapse 
 
 ######## Main ########
 # Directory of the script, change if you move the singularity image
