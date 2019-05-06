@@ -1,22 +1,24 @@
 #!/bin/bash
-# Script to run the synapse detection pipeline on 
+# Enter-point script to run the synapse detection pipeline on 
 # Case 1: 
 # Running on large sequence of 2D tif images (the stitched output data)
 # Args: a folder of 2D tif image slides
-#       (optional) output direcroty
+#       output folder
 #       (optional) a folder of 2D tif mask slices
-#       (optional) a threshold to remove small pieces  
+#       (optional) a threshold to remove small pieces 
+#       (optional) a parameter indicating whether writing hdf5 result back to tiff slices
 # Output: a hdf5 image or 2D tif slices with detected synapses
 #         csv files indicating synapses location, size, and number of voxels    
 # Case 2: 
 # Running on 3D tif image crop 
-# Args: a foler of 3D tif images
+# Args: a folder of 3D tif images
 #       (optional) output directory
 #       (optional) a folder of 3D masks
 #       (optional) a threshold to remove small pieces
+#       (optional) a parameter indicating whether outputing induvidual masks 
 # Output: 3D tif images with deteced synapses
 #         a csv file indicating location, size, and number of voxels
-#         (optional) individual masks for each synapse 
+#         (optional) individual masks for each synapse  
 
 
 # A function to print the usage of this manuscript
@@ -94,7 +96,7 @@ if [[ $1 == "-2D" ]]; then
     "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg tif_to_h5.py -i $INPUT_DIR -o $OUTPUT_DIR"
     # If mask folder is provided, output slices_to_volume.h5 file into $MASK_DIR
     if [[ $MASK_DIR != "" ]]; then
-        if [[ `ls $INPUT_DIR/*.tif | wc -l` != 0 ]]; then 
+        if [[ `ls $MASK_DIR/*.tif | wc -l` != 0 ]]; then 
             # bsub -J "tiftohdf_mask" -n 1 -P "dickson" -o $OUTPUT_DIR/mask_tif2hdf.log "python $SCRIPT_DIR/tif_to_h5.py -i $MASK_DIR"
             bsub -J "tiftohdf_mask" -n 1 -o $OUTPUT_DIR/mask_tif2hdf.log \
             "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg tif_to_h5.py -i $MASK_DIR"
@@ -209,7 +211,7 @@ elif [[ $1 == "-3D" ]]; then
         usage
         exit 1
     fi
-    if [[ $OUTPUT_DIR == "" ]]; then # If no user specific output directory
+    if [[ $OUTPUT_DIR == "" ]]; then # If no user specific output directory, save output into input directory
         OUTPUT_DIR=$INPUT_DIR
     fi
     if [[ $MASK_DIR != "" ]]; then 
