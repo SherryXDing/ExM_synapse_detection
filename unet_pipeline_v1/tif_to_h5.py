@@ -1,5 +1,6 @@
 import sys, getopt
 import os
+import re
 import glob
 import h5py
 import skimage.io
@@ -27,7 +28,8 @@ def tif_slices_to_h5_volume(input_dir, output_dir):
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
-    slice_paths = sorted(slice_paths, key=lambda f: int(os.path.splitext(os.path.basename(f))[0]))
+    regex = re.compile(r'\d+')
+    slice_paths = sorted(slice_paths, key=lambda f: int(regex.findall(os.path.basename(f))[0]))
     first_slice = skimage.io.imread(slice_paths[0])
     volume_shape = (len(slice_paths), *first_slice.shape)
 
