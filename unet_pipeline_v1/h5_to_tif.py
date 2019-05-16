@@ -20,7 +20,7 @@ def h5_volume_to_tif_slices(input_file, output_dir):
     z = 0
     while z >= 0:
         try:
-            with h5py.File(input_file, 'r') as f:
+            with h5py.File(input_file, 'r', libver='latest', swmr=True) as f:
                 img = f['volume'][z,:,:]
         except ValueError:
             print("Whole volume has been processed!")
