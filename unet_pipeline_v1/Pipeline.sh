@@ -157,12 +157,12 @@ if [[ $1 == "-2D" ]]; then
                 if [[ $MASK_DIR != "" ]]; then
                     # bsub -w 'done("tiftohdf_*")' -J "main_$IDX" -n 2 -P "dickson" -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/main_$IDX.log \
                     # "python $SCRIPT_DIR/main_2d.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -m $MASK_DIR/slices_to_volume.h5 -t $THRESHOLD"
-                    bsub -w 'ended("tiftohdf_*")' -J "main_$IDX" -n 2 -gpu "num=1" -q gpu_any -o $OUTPUT_DIR/main_$IDX.log \
+                    bsub -w 'ended("tiftohdf_*")' -J "main_$IDX" -n 3 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/main_$IDX.log \
                     "singularity run --nv -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg main_2d.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -m $MASK_DIR/slices_to_volume.h5 -t $THRESHOLD"
                 else
                     # bsub -w 'done("tiftohdf_*")' -J "main_$IDX" -n 2 -P "dickson" -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/main_$IDX.log \
                     # "python $SCRIPT_DIR/main_2d.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -t $THRESHOLD"
-                    bsub -w 'ended("tiftohdf_*")' -J "main_$IDX" -n 2 -gpu "num=1" -q gpu_any -o $OUTPUT_DIR/main_$IDX.log \
+                    bsub -w 'ended("tiftohdf_*")' -J "main_$IDX" -n 3 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/main_$IDX.log \
                     "singularity run --nv -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg main_2d.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -t $THRESHOLD"
                 fi
             done
@@ -231,13 +231,13 @@ elif [[ $1 == "-3D" ]]; then
                 MASK_BASENAME=`basename $MASK | cut -d '.' -f 1`
                 # bsub -n 4 -P "dickson" -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/${MASK_BASENAME}_${IMG_BASENAME}.log \
                 # "python $SCRIPT_DIR/main_3d.py -i $IMG -o $OUTPUT_DIR -m $MASK -t $THRESHOLD -s $INDIVIDUAL_MASK"
-                bsub -n 4 -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/${MASK_BASENAME}_${IMG_BASENAME}.log \
+                bsub -n 5 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/${MASK_BASENAME}_${IMG_BASENAME}.log \
                 "singularity run --nv -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg main_3d.py -i $IMG -o $OUTPUT_DIR -m $MASK -t $THRESHOLD -s $INDIVIDUAL_MASK"
             done
         else
             # bsub -n 4 -P "dickson" -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/${IMG_BASENAME}.log \
             # "python $SCRIPT_DIR/main_3d.py -i $IMG -o $OUTPUT_DIR -t $THRESHOLD -s $INDIVIDUAL_MASK"
-            bsub -n 4 -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/${IMG_BASENAME}.log \
+            bsub -n 5 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/${IMG_BASENAME}.log \
             "singularity run --nv -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg main_3d.py -i $IMG -o $OUTPUT_DIR -t $THRESHOLD -s $INDIVIDUAL_MASK"
         fi
     done 
