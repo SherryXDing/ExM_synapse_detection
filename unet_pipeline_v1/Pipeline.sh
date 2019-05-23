@@ -51,6 +51,8 @@ THRESHOLD=10
 TO_TIFF=false
 # If output individual masks (only for Case 2)
 INDIVIDUAL_MASK=0
+# A random number to distinguish each call of this script
+RANDIDX=$RANDOM
 
 ######## Case 1
 if [[ $1 == "-2D" ]]; then
@@ -92,13 +94,13 @@ if [[ $1 == "-2D" ]]; then
     mkdir -p $OUTPUT_DIR
     # Tiff to hdf5 for image slices, output slices_to_volume.h5 file into $OUTPUT_DIR
     # bsub -J "tiftohdf_img" -n 1 -P "dickson" -o $OUTPUT_DIR/img_tif2hdf.log "python $SCRIPT_DIR/tif_to_h5.py -i $INPUT_DIR -o $OUTPUT_DIR" 
-    bsub -J "tiftohdf_img" -n 1 -o $OUTPUT_DIR/img_tif2hdf.log \
+    bsub -J "tiftohdf${RANDIDX}_img" -n 1 -o $OUTPUT_DIR/img_tif2hdf.log \
     "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg tif_to_h5.py -i $INPUT_DIR -o $OUTPUT_DIR"
     # If mask folder is provided, output slices_to_volume.h5 file into $MASK_DIR
     if [[ $MASK_DIR != "" ]]; then
         if [[ `ls $MASK_DIR/*.tif | wc -l` != 0 ]]; then 
             # bsub -J "tiftohdf_mask" -n 1 -P "dickson" -o $OUTPUT_DIR/mask_tif2hdf.log "python $SCRIPT_DIR/tif_to_h5.py -i $MASK_DIR"
-            bsub -J "tiftohdf_mask" -n 1 -o $OUTPUT_DIR/mask_tif2hdf.log \
+            bsub -J "tiftohdf${RANDIDX}_mask" -n 1 -o $OUTPUT_DIR/mask_tif2hdf.log \
             "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg tif_to_h5.py -i $MASK_DIR"
         else
             echo "ERROR! Mask tif image does not exist."
@@ -112,22 +114,22 @@ if [[ $1 == "-2D" ]]; then
     WIDTH=`identify $A_IMG | cut -d ' ' -f 3 | cut -d 'x' -f 2`  
     SLICE=`ls $INPUT_DIR/*.tif | wc -l`
     # Number of loops in x-dimension
-    if [[ $(( WIDTH%1000 )) < 500 ]]; then
-        NUM_ROW=$(( WIDTH/1000 ))
-    else
+    if [[ $(( WIDTH%1000 ))>=500 || $(( WIDTH/1000 ))==0 ]]; then
         NUM_ROW=$(( WIDTH/1000+1 ))
+    else
+        NUM_ROW=$(( WIDTH/1000 ))
     fi
     # Number of loops in y-dimension
-    if [[ $(( HEIGHT%1000 )) < 500 ]]; then
-        NUM_COL=$(( HEIGHT/1000 ))
-    else
+    if [[ $(( HEIGHT%1000 ))>=500 || $(( HEIGHT/1000 ))==0 ]]; then
         NUM_COL=$(( HEIGHT/1000+1 ))
+    else
+        NUM_COL=$(( HEIGHT/1000 ))
     fi
     # Number of loops in z-dimension
-    if [[ $(( SLICE%1000 )) < 500 ]]; then
-        NUM_VOL=$(( SLICE/1000 ))
-    else
+    if [[ $(( SLICE%1000 ))>=500 || $(( SLICE/1000 ))==0 ]]; then
         NUM_VOL=$(( SLICE/1000+1 ))
+    else
+        NUM_VOL=$(( SLICE/1000 ))
     fi
     # Loop to process the whole image
     IDX=0
@@ -157,21 +159,21 @@ if [[ $1 == "-2D" ]]; then
                 if [[ $MASK_DIR != "" ]]; then
                     # bsub -w 'done("tiftohdf_*")' -J "main_$IDX" -n 2 -P "dickson" -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/main_$IDX.log \
                     # "python $SCRIPT_DIR/main_2d.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -m $MASK_DIR/slices_to_volume.h5 -t $THRESHOLD"
-                    bsub -w 'ended("tiftohdf_*")' -J "main_$IDX" -n 3 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/main_$IDX.log \
+                    bsub -w "done("tiftohdf${RANDIDX}_*")" -J "main${RANDIDX}_$IDX" -n 3 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/main_$IDX.log \
                     "singularity run --nv -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg main_2d.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -m $MASK_DIR/slices_to_volume.h5 -t $THRESHOLD"
                 else
                     # bsub -w 'done("tiftohdf_*")' -J "main_$IDX" -n 2 -P "dickson" -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/main_$IDX.log \
                     # "python $SCRIPT_DIR/main_2d.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -t $THRESHOLD"
-                    bsub -w 'ended("tiftohdf_*")' -J "main_$IDX" -n 3 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/main_$IDX.log \
+                    bsub -w "done("tiftohdf${RANDIDX}_*")" -J "main${RANDIDX}_$IDX" -n 3 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/main_$IDX.log \
                     "singularity run --nv -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg main_2d.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -t $THRESHOLD"
                 fi
             done
         done
     done
     if [[ $TO_TIFF == "true" ]]; then
-        # bsub -w 'ended("main_*")' -J "hdftotif" -n 2 -P "dickson" -o $OUTPUT_DIR/result_hdf2tif.log \
+        # bsub -w 'done("main_*")' -J "hdftotif" -n 2 -P "dickson" -o $OUTPUT_DIR/result_hdf2tif.log \
         # "python $SCRIPT_DIR/h5_to_tif.py -i $OUTPUT_DIR/slices_to_volume.h5 -o $OUTPUT_DIR/tif_results" 
-        bsub -w 'ended("main_*")' -J "hdftotif" -n 2 -o $OUTPUT_DIR/result_hdf2tif.log \
+        bsub -w "done("main${RANDIDX}_*")" -J "hdftotif${RANDIDX}" -n 2 -o $OUTPUT_DIR/result_hdf2tif.log \
         "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg h5_to_tif.py -i $OUTPUT_DIR/slices_to_volume.h5 -o $OUTPUT_DIR/tif_results"
     fi
 
@@ -231,13 +233,13 @@ elif [[ $1 == "-3D" ]]; then
                 MASK_BASENAME=`basename $MASK | cut -d '.' -f 1`
                 # bsub -n 4 -P "dickson" -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/${MASK_BASENAME}_${IMG_BASENAME}.log \
                 # "python $SCRIPT_DIR/main_3d.py -i $IMG -o $OUTPUT_DIR -m $MASK -t $THRESHOLD -s $INDIVIDUAL_MASK"
-                bsub -n 5 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/${MASK_BASENAME}_${IMG_BASENAME}.log \
+                bsub -J "3D_$RANDIDX" -n 5 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/${MASK_BASENAME}_${IMG_BASENAME}.log \
                 "singularity run --nv -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg main_3d.py -i $IMG -o $OUTPUT_DIR -m $MASK -t $THRESHOLD -s $INDIVIDUAL_MASK"
             done
         else
             # bsub -n 4 -P "dickson" -gpu "num=1" -q gpu_tesla -o $OUTPUT_DIR/${IMG_BASENAME}.log \
             # "python $SCRIPT_DIR/main_3d.py -i $IMG -o $OUTPUT_DIR -t $THRESHOLD -s $INDIVIDUAL_MASK"
-            bsub -n 5 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/${IMG_BASENAME}.log \
+            bsub -J "3D_$RANDIDX" -n 5 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/${IMG_BASENAME}.log \
             "singularity run --nv -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_synapse.simg main_3d.py -i $IMG -o $OUTPUT_DIR -t $THRESHOLD -s $INDIVIDUAL_MASK"
         fi
     done 
