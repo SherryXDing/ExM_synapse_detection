@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np 
 
 history_path = '/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/DING/model_DNN/saved_vgg_model/'
-file_name = 'history_lr1e-3_sgd_batch64_steps100_epochs2000_L1err_vgg2_v2.pkl'
+file_name = 'model_vgg2/history_lr1e-3_sgd_batch64_steps100_epochs2000_L1err_vgg2.pkl'
 
 
 with open(history_path+file_name, 'rb') as f:
@@ -12,19 +12,20 @@ with open(history_path+file_name, 'rb') as f:
 
 # VGG
 num_epoch = len(history['loss'])
-label=['Train_Acc', 'Train_Loss', 'Train_L1_err', 'Vali_acc', 'Vali_L1_err']
+# label=['Train_Acc', 'Train_Loss', 'Train_L1_err', 'Vali_acc', 'Vali_L1_err']
+label=['Train_Acc', 'Train_Loss', 'Train_L1_err']
 plt.figure()
 plt.plot(range(num_epoch), history['acc'], 'r')
 plt.plot(range(num_epoch), history['loss'], 'b')
 plt.plot(range(num_epoch), history['L1_err'], 'k')
-plt.plot(range(num_epoch), history['val_acc'], 'c')
+# plt.plot(range(num_epoch), history['val_acc'], 'c')
 # plt.plot(range(num_epoch), history['val_loss'], 'g')
-plt.plot(range(num_epoch), history['val_L1_err'], 'm')
+# plt.plot(range(num_epoch), history['val_L1_err'], 'm')
 plt.xlabel('Num epoch')
 plt.ylabel('Performance')
 plt.legend(label)
 plt.grid(color='k', linestyle=':')
-plt.savefig(history_path+'performance_lr1e-3_sgd_batch64_steps100_epochs2000_L1err_vgg2.pdf')
+plt.savefig(history_path+'model_vgg2/performance_lr1e-3_sgd_batch64_steps100_epochs2000_L1err_vgg2.pdf')
 plt.show()
 
 

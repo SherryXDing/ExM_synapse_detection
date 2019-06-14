@@ -52,7 +52,7 @@ def vgg_like_v1(input_shape, base_filters=32):
 
 def vgg_like_v2(input_shape, base_filters=32):
     """ 
-    a VGG structure model
+    a VGG structure model, used this one in final object-wise detection
     input_shape: input size in (x,y,z)
     """
     input_shape = input_shape + (1,)  # one channel
