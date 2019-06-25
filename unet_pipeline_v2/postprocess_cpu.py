@@ -104,7 +104,6 @@ def remove_small_piece(out_hdf5_file, img_file_name, location, mask=None, thresh
         if mask is not None:
             assert mask.shape == img.shape, \
                 "Mask and image shapes do not match!"
-            mask[mask!=0] = 1
             curr_obj = curr_obj * mask
         if num_voxel < threshold or np.count_nonzero(curr_obj) < num_voxel*percentage:  
             img[label_img==props.label] = 0

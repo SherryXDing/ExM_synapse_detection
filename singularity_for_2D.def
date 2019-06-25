@@ -14,7 +14,8 @@ cd /misc/local/matlab-2018b/extern/engines/python
 /groups/scicompsoft/home/dingx/Apps/anaconda3/envs/synapse/bin/python setup.py build --build-base="$SINGULARITY_ROOTFS/matlab-build" install --prefix="/matlab"
 
 %files
-./unet_pipeline_v2/* /scripts/
+./unet_pipeline_v2/*.py /scripts/
+./unet_pipeline_v2/*.m /scripts/
 /groups/scicompsoft/home/dingx/Apps/anaconda3/envs/synapse/lib/python3.6/site-packages/matlab/* /matlab/
 
 %runscript

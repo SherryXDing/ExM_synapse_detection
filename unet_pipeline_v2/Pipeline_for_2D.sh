@@ -2,7 +2,7 @@
 # Enter-point script to run the synapse detection pipeline (version 2)
 # Running on large sequence of 2D tif images (the stitched output data)
 # Args: a folder of 2D tif image slides
-#       output folder
+#       an output folder
 #       (optional) a folder of 2D tif mask slices
 #       (optional) a threshold to remove small pieces 
 #       (optional) a threshold to remove the object if it falls in the mask less than percentage
@@ -86,13 +86,14 @@ fi
 # Create output directory if not exist
 mkdir -p $OUTPUT_DIR
 # Tiff to hdf5 for image slices, output slices_to_volume.h5 file into $OUTPUT_DIR
-bsub -P "dickson" -J "tiftohdf${RANDIDX}_img" -n 2 -o $OUTPUT_DIR/img_tif2hdf.log \
+bsub -J "tiftohdf${RANDIDX}_img" -n 2 -o $OUTPUT_DIR/img_tif2hdf.log \
 "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg tif_to_h5.py -i $INPUT_DIR -o $OUTPUT_DIR"
-# If mask folder is provided, output slices_to_volume.h5 file into $MASK_DIR
+# If mask folder is provided, output slices_to_volume.h5 file into $OUTPUT_DIR/MASK
 if [[ $MASK_DIR != "" ]]; then
     if [[ `ls $MASK_DIR/*.tif | wc -l` != 0 ]]; then 
-        bsub -P "dickson" -J "tiftohdf${RANDIDX}_mask" -n 2 -o $OUTPUT_DIR/mask_tif2hdf.log \
-        "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg tif_to_h5.py -i $MASK_DIR"
+        mkdir -p $OUTPUT_DIR/MASK
+        bsub -J "tiftohdf${RANDIDX}_mask" -n 2 -o $OUTPUT_DIR/mask_tif2hdf.log \
+        "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg tif_to_h5.py -i $MASK_DIR -o $OUTPUT_DIR/MASK"
     else
         echo "ERROR! Mask tif image does not exist."
         usage
@@ -123,7 +124,7 @@ else
     NUM_VOL=$(( SLICE/1000 ))
 fi
 
-# Loop to apply 3D U-Net the whole image
+# Loop to apply 3D U-Net to the whole image
 IDX=0
 for (( ROW=0; ROW<$NUM_ROW; ROW++ )); do
     for (( COL=0; COL<$NUM_COL; COL++ )); do
@@ -148,13 +149,13 @@ for (( ROW=0; ROW<$NUM_ROW; ROW++ )); do
             fi
             # Submit GPU jobs
             ((IDX++))
-            bsub -w "done("tiftohdf${RANDIDX}_*")" -P "dickson" -J "unet${RANDIDX}_$IDX" -n 3 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/unet_${MIN_ROW}_${MIN_COL}_${MIN_VOL}.log \
+            bsub -w "done("tiftohdf${RANDIDX}_*")" -J "unet${RANDIDX}_$IDX" -n 3 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/unet_${MIN_ROW}_${MIN_COL}_${MIN_VOL}.log \
             "singularity run --nv -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg unet_gpu.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL"
             if [[ $MASK_DIR != "" ]]; then
-                bsub -w "done("unet${RANDIDX}_$IDX")" -P "dickson" -J "post${RANDIDX}_$IDX" -n 3 -o $OUTPUT_DIR/post_${MIN_ROW}_${MIN_COL}_${MIN_VOL}.log \
-                "singularity run -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg postprocess_cpu.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -m $MASK_DIR/slices_to_volume.h5 -t $THRESHOLD -p $PERCENTAGE"
+                bsub -w "done("unet${RANDIDX}_$IDX")" -J "post${RANDIDX}_$IDX" -n 3 -o $OUTPUT_DIR/post_${MIN_ROW}_${MIN_COL}_${MIN_VOL}.log \
+                "singularity run -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg postprocess_cpu.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -m $OUTPUT_DIR/MASK/slices_to_volume.h5 -t $THRESHOLD -p $PERCENTAGE"
             else
-                bsub -w "done("unet${RANDIDX}_$IDX")" -P "dickson" -J "post${RANDIDX}_$IDX" -n 3 -o $OUTPUT_DIR/post_${MIN_ROW}_${MIN_COL}_${MIN_VOL}.log \
+                bsub -w "done("unet${RANDIDX}_$IDX")" -J "post${RANDIDX}_$IDX" -n 3 -o $OUTPUT_DIR/post_${MIN_ROW}_${MIN_COL}_${MIN_VOL}.log \
                 "singularity run -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg postprocess_cpu.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -t $THRESHOLD -p $PERCENTAGE"
             fi
         done
@@ -162,6 +163,6 @@ for (( ROW=0; ROW<$NUM_ROW; ROW++ )); do
 done
 
 if [[ $TO_TIFF == "true" ]]; then
-    bsub -w "done("post${RANDIDX}_*")" -P "dickson" -J "hdftotif${RANDIDX}" -n 2 -o $OUTPUT_DIR/result_hdf2tif.log \
+    bsub -w "done("post${RANDIDX}_*")" -J "hdftotif${RANDIDX}" -n 2 -o $OUTPUT_DIR/result_hdf2tif.log \
     "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg h5_to_tif.py -i $OUTPUT_DIR/slices_to_volume.h5 -o $OUTPUT_DIR/tif_results"
 fi
