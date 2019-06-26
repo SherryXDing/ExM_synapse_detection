@@ -33,7 +33,7 @@ usage()
 ######## Main ########
 # Directory of the script, change if you move the singularity image
 SCRIPT_DIR=/groups/dickson/dicksonlab/lillvis/ExM/Ding-Ackerman/crops-for-training_Oct2018/DING/model_DNN
-# Directory/file of the input data
+# Directory of the input data
 INPUT_DIR=""
 # Directory for the output result
 OUTPUT_DIR=""
