@@ -5,16 +5,18 @@
 # Args: a folder of 2D tif image slides
 #       an output folder
 # Output: a hdf5 image or 2D tif slices with detected synapses by unet
+# Usage: bash Pipeline_split.sh -unet -i <input_tiff_directory> -o <output_result_directory>
 # Case 2:
 # Running post-processing
-# Args: a folder of hdf5 image (unet result)
+# Args: a folder of hdf5 image (only one unet result in hdf5 format in that folder!)
 #       a folder of 2D tif mask slices
-#       (optional) an output folder
+#       (optional) an output folder (it's not necessary but recommend to provide)
 #       (optional) a threshold to remove small pieces 
 #       (optional) a threshold to remove the object if it falls in the mask less than percentage
 #       (optional) a parameter indicating whether writing hdf5 result back to tiff slices
 # Output: a hdf5 image or 2D tif slices with postprocessed synapses
 #         csv files indicating synapses location, size, and number of voxels
+# Usage: bash Pipeline_split.sh -post -i <input_hdf5_directory> -m <mask_tiff_directory> -o <output_result_directory> -t <number_of_voxels_threshold_to_remove_small_piece> -p <mask_overlap_percentage_threshold_to_remove_object> -s
 
 
 # A function to print the usage of this manuscript
