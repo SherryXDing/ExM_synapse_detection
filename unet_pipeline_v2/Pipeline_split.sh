@@ -168,7 +168,7 @@ elif [[ $1 == "-post" ]]; then
         exit 1
     fi
     # Create output directory if not exist
-    if [[ $OUTPUT_DIR == "" ]]; then 
+    if [[ ( $OUTPUT_DIR == "" ) || ( $OUTPUT_DIR == $INPUT_DIR ) ]]; then 
         OUTPUT_DIR=$INPUT_DIR/RESULT_$RANDIDX
     fi
     mkdir -p $OUTPUT_DIR
