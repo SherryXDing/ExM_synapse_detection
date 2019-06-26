@@ -9,6 +9,7 @@
 #       (optional) a parameter indicating whether writing hdf5 result back to tiff slices
 # Output: a hdf5 image or 2D tif slices with detected synapses
 #         csv files indicating synapses location, size, and number of voxels    
+# Written by Sherry Ding @ SciCompSoft
 
 
 # A function to print the usage of this manuscript

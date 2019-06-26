@@ -17,6 +17,7 @@
 # Output: a hdf5 image or 2D tif slices with postprocessed synapses
 #         csv files indicating synapses location, size, and number of voxels
 # Usage: bash Pipeline_split.sh -post -i <input_hdf5_directory> -m <mask_tiff_directory> -o <output_result_directory> -t <number_of_voxels_threshold_to_remove_small_piece> -p <mask_overlap_percentage_threshold_to_remove_object> -s
+# Written by Sherry Ding @ SciCompSoft
 
 
 # A function to print the usage of this manuscript
@@ -75,7 +76,7 @@ if [[ $1 == "-unet" ]]; then
     # Create output directory if not exist
     mkdir -p $OUTPUT_DIR
     # Tiff to hdf5 for image slices, output slices_to_volume.h5 file into $OUTPUT_DIR
-    bsub -P "dickson" -J "tiftohdf${RANDIDX}_img" -n 2 -o $OUTPUT_DIR/img_tif2hdf.log \
+    bsub -J "tiftohdf${RANDIDX}_img" -n 2 -o $OUTPUT_DIR/img_tif2hdf.log \
     "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg tif_to_h5.py -i $INPUT_DIR -o $OUTPUT_DIR"
     # Get the dimension of image
     A_IMG=`ls $INPUT_DIR/*.tif | head -n 1`
@@ -125,7 +126,7 @@ if [[ $1 == "-unet" ]]; then
                 fi
                 # Submit GPU jobs
                 ((IDX++))
-                bsub -w "done("tiftohdf${RANDIDX}_img")" -P "dickson" -J "unet${RANDIDX}_$IDX" -n 3 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/unet_${MIN_ROW}_${MIN_COL}_${MIN_VOL}.log \
+                bsub -w "done("tiftohdf${RANDIDX}_img")" -J "unet${RANDIDX}_$IDX" -n 3 -gpu "num=1" -q gpu_rtx -o $OUTPUT_DIR/unet_${MIN_ROW}_${MIN_COL}_${MIN_VOL}.log \
                 "singularity run --nv -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg unet_gpu.py -i $OUTPUT_DIR/slices_to_volume.h5 -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL"
             done
         done
@@ -182,7 +183,7 @@ elif [[ $1 == "-post" ]]; then
     fi
     mkdir -p $OUTPUT_DIR/MASK
     # Tiff to hdf5 for mask slices, output slices_to_volume.h5 file into $OUTPUT_DIR/MASK
-    bsub -P "dickson" -J "tiftohdf${RANDIDX}_mask" -n 2 -o $OUTPUT_DIR/mask_tif2hdf.log \
+    bsub -J "tiftohdf${RANDIDX}_mask" -n 2 -o $OUTPUT_DIR/mask_tif2hdf.log \
     "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg tif_to_h5.py -i $MASK_DIR -o $OUTPUT_DIR/MASK"
     # Get the dimension of image
     A_IMG=`ls $MASK_DIR/*.tif | head -n 1`
@@ -232,13 +233,13 @@ elif [[ $1 == "-post" ]]; then
                 fi
                 # Submit GPU jobs
                 ((IDX++))
-                bsub -w "done("tiftohdf${RANDIDX}_mask")" -P "dickson" -J "post${RANDIDX}_$IDX" -n 3 -o $OUTPUT_DIR/post_${MIN_ROW}_${MIN_COL}_${MIN_VOL}.log \
+                bsub -w "done("tiftohdf${RANDIDX}_mask")" -J "post${RANDIDX}_$IDX" -n 3 -o $OUTPUT_DIR/post_${MIN_ROW}_${MIN_COL}_${MIN_VOL}.log \
                 "singularity run -B /misc/local/matlab-2018b/ -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg postprocess_cpu.py -i $INPUT_IMG -l $MIN_ROW,$MIN_COL,$MIN_VOL,$MAX_ROW,$MAX_COL,$MAX_VOL -m $OUTPUT_DIR/MASK/slices_to_volume.h5 -t $THRESHOLD -p $PERCENTAGE"
             done
         done
     done
     if [[ $TO_TIFF == "true" ]]; then
-        bsub -w "done("post${RANDIDX}_*")" -P "dickson" -J "hdftotif${RANDIDX}" -n 2 -o $OUTPUT_DIR/result_hdf2tif.log \
+        bsub -w "done("post${RANDIDX}_*")" -J "hdftotif${RANDIDX}" -n 2 -o $OUTPUT_DIR/result_hdf2tif.log \
         "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_for_2D.simg h5_to_tif.py -i $INPUT_IMG -o $OUTPUT_DIR/tif_results"
     fi
 

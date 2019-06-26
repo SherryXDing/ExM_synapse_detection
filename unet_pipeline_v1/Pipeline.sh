@@ -19,6 +19,7 @@
 # Output: 3D tif images with deteced synapses
 #         a csv file indicating location, size, and number of voxels
 #         (optional) individual masks for each synapse  
+# Written by Sherry Ding @ SciCompSoft
 
 
 # A function to print the usage of this manuscript
