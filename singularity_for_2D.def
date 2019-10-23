@@ -4,7 +4,7 @@ From: ubuntu:16.04
 %help
 Singularity container for synapse detection project
 Usage:
-singularity run --nv -B /misc/local/matlab-2018b/ -B <lab_folder> singularity_synapse.simg main_2d.py/main_3d.py <args>
+singularity run --nv -B /misc/local/matlab-2018b/ -B <lab_folder> singularity_*.simg main_2d.py/main_3d.py <args>
 
 %setup
 mkdir -p $SINGULARITY_ROOTFS/scripts
@@ -14,8 +14,8 @@ cd /misc/local/matlab-2018b/extern/engines/python
 /groups/scicompsoft/home/dingx/Apps/anaconda3/envs/synapse/bin/python setup.py build --build-base="$SINGULARITY_ROOTFS/matlab-build" install --prefix="/matlab"
 
 %files
-./unet_pipeline_v2/*.py /scripts/
-./unet_pipeline_v2/*.m /scripts/
+./unet_pipeline_v3/*.py /scripts/
+./unet_pipeline_v3/*.m /scripts/
 /groups/scicompsoft/home/dingx/Apps/anaconda3/envs/synapse/lib/python3.6/site-packages/matlab/* /matlab/
 
 %runscript
@@ -54,7 +54,7 @@ git \
 wget && \
 rm -rf /var/lib/apt/lists/*
 
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+wget https://repo.continuum.io/miniconda/Miniconda3-4.6.14-Linux-x86_64.sh -O miniconda.sh
 bash miniconda.sh -b -p /miniconda
 PATH="/miniconda/bin:$PATH"
 conda config --set always_yes yes --set changeps1 no 
@@ -63,8 +63,8 @@ conda info -a
 conda install python=3.6
 
 conda install tensorflow-gpu=1.10
-conda install numpy
-conda install scikit-image
+conda install numpy=1.16
+conda install scikit-image=0.15
 conda install h5py
 conda install tqdm
 cp -a /matlab/ /miniconda/lib/python3.6/site-packages

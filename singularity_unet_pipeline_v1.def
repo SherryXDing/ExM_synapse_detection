@@ -62,8 +62,8 @@ conda info -a
 conda install python=3.6
 
 conda install tensorflow-gpu=1.10
-conda install numpy
-conda install scikit-image
+conda install numpy=1.16
+conda install scikit-image=0.15
 conda install h5py
 conda install tqdm
 cp -a /matlab/ /miniconda/lib/python3.6/site-packages
