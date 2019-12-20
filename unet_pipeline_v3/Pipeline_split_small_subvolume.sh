@@ -25,9 +25,9 @@
 usage()
 {
     echo "Usage for running unet on 2D tiff slices:"
-    echo "bash Pipeline_split.sh -unet -i <input_tiff_directory> -o <output_result_directory>"
+    echo "bash Pipeline_split_small_subvolume.sh -unet -i <input_tiff_directory> -o <output_result_directory>"
     echo "Usage for running post-processing on unet results:"
-    echo "bash Pipeline_split.sh -post -i <input_hdf5_directory> -m <mask_tiff_directory> -o <output_result_directory> -t <number_of_voxels_threshold_to_remove_small_piece> -p <mask_overlap_percentage_threshold_to_remove_object> -s"
+    echo "bash Pipeline_split_small_subvolume.sh -post -i <input_hdf5_directory> -m <mask_tiff_directory> -o <output_result_directory> -t <number_of_voxels_threshold_to_remove_small_piece> -p <mask_overlap_percentage_threshold_to_remove_object> -s"
     echo "-o <output_result_directory>, -t <number_of_voxels_threshold_to_remove_small_piece>, -p <mask_overlap_percentage_threshold_to_remove_object> and -s (hfd5 result to tiff) are optional"
 }
 
@@ -175,8 +175,7 @@ elif [[ $1 == "-post" ]]; then
     fi
     mkdir -p $OUTPUT_DIR
     # Copy input hdf5 file (unet result) into output directory
-    cp $INPUT_DIR/*.h5 $OUTPUT_DIR
-    INPUT_IMG=`ls $OUTPUT_DIR/*.h5`
+    bsub -J "cp_input${RANDIDX}" -n 4 -o /dev/null "cp $INPUT_DIR/*.h5 $OUTPUT_DIR"
     if [[ ( $MASK_DIR == "" ) || ( `ls $MASK_DIR/*.tif | wc -l` == 0 ) ]]; then # Error if there is no mask
         echo "ERROR! Please provide mask."
         usage
@@ -184,7 +183,7 @@ elif [[ $1 == "-post" ]]; then
     fi
     mkdir -p $OUTPUT_DIR/MASK
     # Tiff to hdf5 for mask slices, output slices_to_volume.h5 file into $OUTPUT_DIR/MASK
-    bsub -J "tiftohdf${RANDIDX}_mask" -n 3 -o $OUTPUT_DIR/mask_tif2hdf.log \
+    bsub -w "done("cp_input${RANDIDX}")" -J "tiftohdf${RANDIDX}_mask" -n 3 -o $OUTPUT_DIR/mask_tif2hdf.log \
     "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_2D_new_postprocess.simg tif_to_h5.py -i $MASK_DIR -o $OUTPUT_DIR/MASK"
     # Get the dimension of image
     A_IMG=`ls $MASK_DIR/*.tif | head -n 1`
@@ -210,6 +209,7 @@ elif [[ $1 == "-post" ]]; then
         NUM_VOL=$(( SLICE/500 ))
     fi
     # Loop to run post-processing on the whole image
+    INPUT_IMG=`ls $OUTPUT_DIR/*.h5`
     IDX=0
     for (( ROW=0; ROW<$NUM_ROW; ROW++ )); do
         for (( COL=0; COL<$NUM_COL; COL++ )); do
