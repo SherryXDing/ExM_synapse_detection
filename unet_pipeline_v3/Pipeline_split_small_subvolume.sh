@@ -175,7 +175,7 @@ elif [[ $1 == "-post" ]]; then
     fi
     mkdir -p $OUTPUT_DIR
     # Copy input hdf5 file (unet result) into output directory
-    bsub -J "cp_input${RANDIDX}" -n 4 -o /dev/null "cp $INPUT_DIR/*.h5 $OUTPUT_DIR"
+    bsub -J "cp_input${RANDIDX}" -n 32 -o /dev/null "cp $INPUT_DIR/*.h5 $OUTPUT_DIR"
     if [[ ( $MASK_DIR == "" ) || ( `ls $MASK_DIR/*.tif | wc -l` == 0 ) ]]; then # Error if there is no mask
         echo "ERROR! Please provide mask."
         usage

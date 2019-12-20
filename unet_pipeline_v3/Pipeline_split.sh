@@ -175,8 +175,7 @@ elif [[ $1 == "-post" ]]; then
     fi
     mkdir -p $OUTPUT_DIR
     # Copy input hdf5 file (unet result) into output directory
-    cp $INPUT_DIR/*.h5 $OUTPUT_DIR
-    INPUT_IMG=`ls $OUTPUT_DIR/*.h5`
+    bsub -J "cp_input${RANDIDX}" -n 32 -o /dev/null "cp $INPUT_DIR/*.h5 $OUTPUT_DIR"
     if [[ ( $MASK_DIR == "" ) || ( `ls $MASK_DIR/*.tif | wc -l` == 0 ) ]]; then # Error if there is no mask
         echo "ERROR! Please provide mask."
         usage
@@ -184,7 +183,7 @@ elif [[ $1 == "-post" ]]; then
     fi
     mkdir -p $OUTPUT_DIR/MASK
     # Tiff to hdf5 for mask slices, output slices_to_volume.h5 file into $OUTPUT_DIR/MASK
-    bsub -J "tiftohdf${RANDIDX}_mask" -n 3 -o $OUTPUT_DIR/mask_tif2hdf.log \
+    bsub -w "done("cp_input${RANDIDX}")" -J "tiftohdf${RANDIDX}_mask" -n 3 -o $OUTPUT_DIR/mask_tif2hdf.log \
     "singularity run -B /groups/dickson/dicksonlab/ -B /nrs/dickson/ $SCRIPT_DIR/singularity_2D_new_postprocess.simg tif_to_h5.py -i $MASK_DIR -o $OUTPUT_DIR/MASK"
     # Get the dimension of image
     A_IMG=`ls $MASK_DIR/*.tif | head -n 1`
@@ -210,6 +209,7 @@ elif [[ $1 == "-post" ]]; then
         NUM_VOL=$(( SLICE/1000 ))
     fi
     # Loop to run post-processing on the whole image
+    INPUT_IMG=`ls $OUTPUT_DIR/*.h5`
     IDX=0
     for (( ROW=0; ROW<$NUM_ROW; ROW++ )); do
         for (( COL=0; COL<$NUM_COL; COL++ )); do
